@@ -18,26 +18,46 @@ module.exports = {
       email: friendList // search for both users by passing array into the find criteria
     })
     .then(users => {
-      user1 = _.find(users, { email: friendList[0] });
-      user2 = _.find(users, { email: friendList[1] });
-
-      // create users if they do not exist or return the user object found
+      // return the user object found or create users if they do not exist
       let promises = [
-        user1 || Friend.create({ email: friendList[0] }),
-        user2 || Friend.create({ email: friendList[1] })
+        _.find(users, { email: friendList[0] }) || Friend.create({ email: friendList[0] }),
+        _.find(users, { email: friendList[1] }) || Friend.create({ email: friendList[1] })
       ];
 
       return Promise.all(promises);
     })
-    .spread((user1, user2) => {
+    .spread((userResult1, userResult2) => {
+      user1 = userResult1;
+      user2 = userResult2;
+      return Friendship.find({
+        or: [{
+          friendor: user1.id,
+          friendee: user2.id
+        }, {
+          friendor: user2.id,
+          friendee: user1.id
+        }]
+      })
+    })
+    .then(friendship => {
+      if (!_.isEmpty(friendship)) {
+        return null;
+      }
 
       return Friendship.create({
-        friendor: user1,
+        friendor: user1.id,
         friendee: user2.id
       });
     })
-    .then(() => 
-      res.send(200, { success: true })
+    .then(friendship => {
+      if (_.isNull(friendship)) {
+        res.badRequest('Friendship already exists');
+      } else {
+        res.send(200, { success: true });
+      }
+    })
+    .catch(e => 
+      res.serverError(e)
     );
   }
 };
