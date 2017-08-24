@@ -4,11 +4,11 @@ let Promise = require('bluebird');
 module.exports = {
 	connect: (req, res) => {
     if (!_.isArray(req.body.friends)) {
-      return res.badRequest('An array of friends must be specified to be connected');
+      return res.send(400, { success: false, message: 'An array of friends must be specified to be connected' });
     }
 
     if (req.body.friends.length != 2) {
-      return res.badRequest('We only allow 2 friends to be connected each time');
+      return res.send(400, { success: false, message: 'We only allow 2 friends to be connected each time' });
     }
 
     let friendList = req.body.friends;
@@ -29,6 +29,7 @@ module.exports = {
     .spread((userResult1, userResult2) => {
       user1 = userResult1;
       user2 = userResult2;
+
       return Friendship.find({
         or: [{
           friendor: user1.id,
@@ -37,11 +38,11 @@ module.exports = {
           friendor: user2.id,
           friendee: user1.id
         }]
-      })
+      });
     })
     .then(friendship => {
       if (!_.isEmpty(friendship)) {
-        return null;
+        return 'Friendship already exists' ; // return message to indicate no new friendship was created
       }
 
       return Friendship.create({
@@ -49,9 +50,9 @@ module.exports = {
         friendee: user2.id
       });
     })
-    .then(friendship => {
-      if (_.isNull(friendship)) {
-        res.badRequest('Friendship already exists');
+    .then(result => {
+      if (_.isString(result)) {
+        res.send(400, { success: false, message: result });
       } else {
         res.send(200, { success: true });
       }
