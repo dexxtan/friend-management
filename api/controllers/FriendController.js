@@ -30,8 +30,15 @@ module.exports = {
       return Promise.all(promises);
     })
     .spread((user1, user2) => {
-      res.send({ success: true });
-    });
+
+      return Friendship.create({
+        friendor: user1,
+        friendee: user2.id
+      });
+    })
+    .then(() => 
+      res.send(200, { success: true })
+    );
   }
 };
 
