@@ -60,6 +60,47 @@ module.exports = {
     .catch(e => 
       res.serverError(e)
     );
+  },
+
+  connections: (req, res) => {
+    if (_.isUndefined(req.body.email)) {
+      return res.send(400, { success: false, message: 'Please specify an email address' });
+    }
+
+    let userEmail = req.body.email;
+
+    return Friend.findOne({
+      email: userEmail
+    })
+    .then(user => {
+      return Friendship.find({
+        or: [{
+          friendor: user.id
+        }, {
+          friendee: user.id
+        }]
+      })
+      .populate('friendor')
+      .populate('friendee');
+    })
+    .then(friendships => {
+      const friendsList = friendships.map(friendship => {
+        if (friendship.friendor.email === userEmail) {
+          return friendship.friendee.email;
+        } else {
+          return friendship.friendor.email;
+        }
+      });
+
+      res.send(200, {
+        success: true,
+        friends: friendsList,
+        count: friendsList.length
+      });
+    })
+    .catch(e => {
+      res.serverError(e);
+    });
   }
 };
 
