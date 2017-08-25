@@ -1,5 +1,5 @@
-let _ = require('lodash');
-let Promise = require('bluebird');
+const _ = require('lodash');
+const Promise = require('bluebird');
 
 module.exports = {
 	connect: (req, res) => {
@@ -11,7 +11,7 @@ module.exports = {
       return res.send(400, { success: false, message: 'We only allow 2 friends to be connected each time' });
     }
 
-    let friendList = req.body.friends;
+    const friendList = req.body.friends;
     let user1, user2;
 
     return Friend.find({
@@ -19,7 +19,7 @@ module.exports = {
     })
     .then(users => {
       // return the user object found or create users if they do not exist
-      let promises = [
+      const promises = [
         _.find(users, { email: friendList[0] }) || Friend.create({ email: friendList[0] }),
         _.find(users, { email: friendList[1] }) || Friend.create({ email: friendList[1] })
       ];
