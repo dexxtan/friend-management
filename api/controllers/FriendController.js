@@ -72,39 +72,56 @@ module.exports = {
       return res.send(400, { success: false, message: 'Please specify an email address' });
     }
 
-    let userEmail = req.body.email;
+    const userEmail = req.body.email;
+    let user;
+    const userNotFoundErrorMsg = 'Could not find an existing friend with the email address specified';
 
     return Friend.findOne({
       email: userEmail
     })
-    .then(user => {
+    .then(friend => {
+      if (_.isUndefined(friend)) {
+        throw new Error(userNotFoundErrorMsg);
+      }
+
+      user = friend;
       return Friendship.find({
         or: [{
           friendor: user.id
         }, {
           friendee: user.id
         }]
-      })
-      .populate('friendor')
-      .populate('friendee');
+      });
     })
     .then(friendships => {
-      const friendsList = friendships.map(friendship => {
-        if (friendship.friendor.email === userEmail) {
-          return friendship.friendee.email;
+      const friendsListIds = friendships.map(friendship => {
+        // friendee and friendor here are IDs
+        if (friendship.friendor === user.id) {
+          return friendship.friendee;
         } else {
-          return friendship.friendor.email;
+          return friendship.friendor;
         }
       });
 
+      return Friend.find({
+        id: friendsListIds
+      })
+    })
+    .then(friends => {
+      const friendEmails = friends.map(friend => friend.email);
+
       res.send(200, {
         success: true,
-        friends: friendsList,
+        friends: friendEmails,
         count: friendsList.length
       });
     })
     .catch(e => {
-      res.serverError(e);
+      if (e.message === userNotFoundErrorMsg) {
+        res.send(400, { success: false, message: userNotFoundErrorMsg });
+      } else {
+        res.serverError(e);
+      }
     });
   },
 
