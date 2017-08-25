@@ -13,6 +13,7 @@ module.exports = {
 
     const friendList = req.body.friends;
     let user1, user2;
+    const friendshipExistsErrorMsg = 'Friendship already exists';
 
     return Friend.find({
       email: friendList // search for both users by passing array into the find criteria
@@ -42,7 +43,7 @@ module.exports = {
     })
     .then(friendship => {
       if (!_.isEmpty(friendship)) {
-        return 'Friendship already exists' ; // return message to indicate no new friendship was created
+        throw new Error(friendshipExistsErrorMsg); 
       }
 
       return Friendship.create({
@@ -50,16 +51,20 @@ module.exports = {
         friendee: user2.id
       });
     })
-    .then(result => {
-      if (_.isString(result)) {
-        res.send(400, { success: false, message: result });
-      } else {
+    .then(friendship => {
+      if (_.isObject(friendship)) {
         res.send(200, { success: true });
+      } else {
+        throw new Error('Unknown error occurred');
       }
     })
-    .catch(e => 
-      res.serverError(e)
-    );
+    .catch(e => {
+      if (e.message === friendshipExistsErrorMsg) {
+        res.send(400, { success: false, message: friendshipExistsErrorMsg }); 
+      } else {
+        res.serverError(e);
+      }
+    });
   },
 
   connections: (req, res) => {
@@ -100,6 +105,103 @@ module.exports = {
     })
     .catch(e => {
       res.serverError(e);
+    });
+  },
+
+  common: (req, res) => {
+    if (!_.isArray(req.body.friends) || req.body.friends.length != 2) {
+      return res.send(400, { success: false, message: 'An array of 2 friends must be specified to find common friends' });
+    }
+
+    const friendList = req.body.friends;
+    let friend1, friend2;
+    const friendNotFoundErrorMsg = 'Either friend not found';
+
+    return Friend.find({
+      email: friendList
+    })
+    .then(friends => {
+      if (friends.length < 2) {
+        throw new Error(friendNotFoundErrorMsg); // return message to indicate that one or both friends are not yet created
+      }
+
+      // we use find here because the performance impact won't be great since friends will be an array of at most 2 friends
+      friend1 = _.find(friends, { email: friendList[0] });
+      friend2 = _.find(friends, { email: friendList[1] });
+
+      return Promise.all([
+        Friendship.find({
+          or: [{
+            friendor: friend1.id
+          }, {
+            friendee: friend1.id
+          }]
+        }),
+        Friendship.find({
+          or: [{
+            friendor: friend2.id
+          }, {
+            friendee: friend2.id
+          }]
+        })
+      ]);
+    })
+    .spread((friendshipList1, friendshipList2) => {
+      let friendList1Ids = friendshipList1.map(friendship => {
+        // friendor and friendee are IDs here because we did not populate the relationship
+        if (friendship.friendor === friend1.id) {
+          return friendship.friendee;
+        } else {
+          return friendship.friendor;
+        }
+      });
+      let friendList2Ids = friendshipList2.map(friendship => {
+        if (friendship.friendor === friend2.id) {
+          return friendship.friendee;
+        } else {
+          return friendship.friendor;
+        }
+      });
+
+      // sort the friend lists for faster processing
+      friendList1Ids.sort();
+      friendList2Ids.sort();
+
+      // this can be done using lodash _.intersection which is probably more performant
+      // but I thought there might be a point in writing it out for the purposes of this interview assignment
+      const commonListIds = [];
+      let i, j;
+      while (i < friendList1Ids.length && j < friendList2Ids.length) {
+        if (friendList1Ids[i] === friendList2Ids[j]) {
+          i++;
+          j++;
+          commonListIds.push(friendList1Ids[i]);
+        } else if (friendList1Ids[i] > friendList2Ids[j]) {
+          j++;
+        } else {
+          i++;
+        }
+      }
+
+      return Friend.find({
+        id: commonListIds
+      })
+    })
+    .then(friends => {
+      const emailList = friends.map(friend => friend.email);
+
+      res.send(200, {
+        success: true,
+        friends: emailList,
+        count: emailList.length
+      });
+    })
+    .catch(e => {
+      if (e.message === friendNotFoundErrorMsg) {
+        res.send(400,  { success: false, message: friendNotFoundErrorMsg });
+      } else {
+        res.serverError(e); 
+      }
     });
   }
 };
