@@ -14,6 +14,7 @@ module.exports = {
     const friendList = req.body.friends;
     let user1, user2;
     const friendshipExistsErrorMsg = 'Friendship already exists';
+    const blockageExistsErrorMsg = 'A friendship could not be created because one user has blocked the other';
 
     return Friend.find({
       email: friendList // search for both users by passing array into the find criteria
@@ -31,19 +32,34 @@ module.exports = {
       user1 = userResult1;
       user2 = userResult2;
 
-      return Friendship.find({
-        or: [{
-          friendor: user1.id,
-          friendee: user2.id
-        }, {
-          friendor: user2.id,
-          friendee: user1.id
-        }]
-      });
+      return Promise.all([
+        Friendship.find({
+          or: [{
+            friendor: user1.id,
+            friendee: user2.id
+          }, {
+            friendor: user2.id,
+            friendee: user1.id
+          }]
+        }),
+        Block.find({
+          or: [{
+            blocker: user1.id,
+            target: user2.id
+          }, {
+            blocker: user2.id,
+            target: user1.id
+          }]
+        })
+      ]);
     })
-    .then(friendship => {
-      if (!_.isEmpty(friendship)) {
+    .spread((friendships, blocks) => {
+      if (!_.isEmpty(friendships)) {
         throw new Error(friendshipExistsErrorMsg); 
+      }
+
+      if (!_.isEmpty(blocks)) {
+        throw new Error(blockageExistsErrorMsg);
       }
 
       return Friendship.create({
@@ -61,6 +77,8 @@ module.exports = {
     .catch(e => {
       if (e.message === friendshipExistsErrorMsg) {
         res.send(400, { success: false, message: friendshipExistsErrorMsg }); 
+      } else if (e.message === blockageExistsErrorMsg) {
+        res.send(400, { success: false, message: blockageExistsErrorMsg });
       } else {
         res.serverError(e);
       }
