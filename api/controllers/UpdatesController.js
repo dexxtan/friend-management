@@ -3,12 +3,12 @@ const Promise = require('bluebird');
 
 module.exports = {
   subscribe: (req, res) => {
-    if (_.isUndefined(req.body.requestor) || !_.isString(req.body.requestor)) {
-      return res.send(400, { success: false, message: 'Requestor must specified and must be a string' });
+    if (_.isUndefined(req.body.requestor) || !_.isString(req.body.requestor) || !EmailService.isEmail(req.body.requestor)) {
+      return res.send(400, { success: false, message: 'Requestor must specified and must be a valid email address' });
     }
 
-    if (_.isUndefined(req.body.target) || !_.isString(req.body.target)) {
-      return res.send(400, { success: false, message: 'Target must specified and must be a string' });
+    if (_.isUndefined(req.body.target) || !_.isString(req.body.target) || !EmailService.isEmail(req.body.target)) {
+      return res.send(400, { success: false, message: 'Target must specified and must be a valid email address' });
     }
 
     const requestorEmail = req.body.requestor;
@@ -22,7 +22,7 @@ module.exports = {
     })
     .then(friends => {
       requestor = _.find(friends, { email: requestorEmail });
-      target = _.find(target, { email: targetEmail });
+      target = _.find(friends, { email: targetEmail });
 
       // target must exist, do not create a new friend for target
       if (_.isUndefined(target)) {
@@ -72,12 +72,12 @@ module.exports = {
   },
 
   block: (req, res) => {
-    if (_.isUndefined(req.body.requestor) || !_.isString(req.body.requestor)) {
-      return res.send(400, { success: false, message: 'Requestor must specified and must be a string' });
+    if (_.isUndefined(req.body.requestor) || !_.isString(req.body.requestor) || !EmailService.isEmail(req.body.requestor)) {
+      return res.send(400, { success: false, message: 'Requestor must specified and must be a valid email address' });
     }
 
-    if (_.isUndefined(req.body.target) || !_.isString(req.body.target)) {
-      return res.send(400, { success: false, message: 'Target must specified and must be a string' });
+    if (_.isUndefined(req.body.target) || !_.isString(req.body.target) || !EmailService.isEmail(req.body.target)) {
+      return res.send(400, { success: false, message: 'Target must specified and must be a valid email address' });
     }
 
     const requestorEmail = req.body.requestor;
@@ -92,7 +92,7 @@ module.exports = {
       // return the friend objects found or create friends if they do not exist
       const promises = [
         _.find(friends, { email: requestorEmail }) || Friend.create({ email: requestorEmail }),
-        _.find(target, { email: targetEmail }) || Friend.create({ email: targetEmail })
+        _.find(friends, { email: targetEmail }) || Friend.create({ email: targetEmail })
       ];
 
       return Promise.all(promises);
@@ -133,8 +133,8 @@ module.exports = {
   },
 
   update: (req, res) => {
-    if (_.isUndefined(req.body.sender) || !_.isString(req.body.sender)) {
-      return res.send(400, { success: false, message: 'Sender must specified and must be a string' });
+    if (_.isUndefined(req.body.sender) || !_.isString(req.body.sender) || !EmailService.isEmail(req.body.sender)) {
+      return res.send(400, { success: false, message: 'Sender must specified and must be a valid email address' });
     }
 
     if (_.isUndefined(req.body.text) || !_.isString(req.body.text)) {

@@ -11,6 +11,12 @@ module.exports = {
       return res.send(400, { success: false, message: 'We only allow 2 friends to be connected each time' });
     }
 
+    for (let i = 0; i < req.body.friends.length; i++) {
+      if (!EmailService.isEmail(req.body.friends[i])) {
+        return res.send(400, { success: false, message: 'An email address specified was not a valid email address' });
+      }
+    }
+
     const friendList = req.body.friends;
     let user1, user2;
     const friendshipExistsErrorMsg = 'Friendship already exists';
@@ -86,8 +92,8 @@ module.exports = {
   },
 
   connections: (req, res) => {
-    if (_.isUndefined(req.body.email)) {
-      return res.send(400, { success: false, message: 'Please specify an email address' });
+    if (_.isUndefined(req.body.email) || !EmailService.isEmail(req.body.email)) {
+      return res.send(400, { success: false, message: 'Please specify a valid email address' });
     }
 
     const userEmail = req.body.email;
@@ -148,6 +154,12 @@ module.exports = {
       return res.send(400, { success: false, message: 'An array of 2 friends must be specified to find common friends' });
     }
 
+    for (let i = 0; i < req.body.friends.length; i++) {
+      if (!EmailService.isEmail(req.body.friends[i])) {
+        return res.send(400, { success: false, message: 'An email address specified was not a valid email address' });
+      }
+    }
+
     const friendList = req.body.friends;
     let friend1, friend2;
     const friendNotFoundErrorMsg = 'Either friend not found';
@@ -205,7 +217,8 @@ module.exports = {
       // this can be done using lodash _.intersection which is probably more performant
       // but I thought there might be a point in writing it out for the purposes of this interview assignment
       const commonListIds = [];
-      let i, j;
+      let i = 0;
+      let j = 0;
       while (i < friendList1Ids.length && j < friendList2Ids.length) {
         if (friendList1Ids[i] === friendList2Ids[j]) {
           i++;
