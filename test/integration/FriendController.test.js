@@ -241,7 +241,7 @@ describe('FriendController', () => {
         });
     });
 
-    it('should respond with bad request when one email address specfied was not an existing friend', () => {
+    it('should respond with bad request when one email address specified was not an existing friend', () => {
       return request(sails.hooks.http.app)
         .post('/friend/common')
         .send({ friends: [ 'test1@example.com', 'haha@haha.com' ] })

@@ -65,6 +65,8 @@ module.exports = {
     .catch(e => {
       if (e.message === subscriptionExistsErrorMsg) {
         res.send(400, { success: false, message: subscriptionExistsErrorMsg }); 
+      } else if (e.message === targetDoesNotExistErrorMsg) {
+        res.send(400, { success: false, message: targetDoesNotExistErrorMsg }); 
       } else {
         res.serverError(e);
       }
