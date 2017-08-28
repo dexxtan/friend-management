@@ -221,9 +221,9 @@ module.exports = {
       let j = 0;
       while (i < friendList1Ids.length && j < friendList2Ids.length) {
         if (friendList1Ids[i] === friendList2Ids[j]) {
+          commonListIds.push(friendList1Ids[i]);
           i++;
           j++;
-          commonListIds.push(friendList1Ids[i]);
         } else if (friendList1Ids[i] > friendList2Ids[j]) {
           j++;
         } else {

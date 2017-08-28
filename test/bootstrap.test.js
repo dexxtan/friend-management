@@ -1,4 +1,5 @@
-var sails = require('sails');
+const sails = require('sails');
+const Promise = require('bluebird');
 
 before(function(done) {
 
@@ -25,4 +26,13 @@ before(function(done) {
 after(function(done) {
   // here you can clear fixtures, etc.
   sails.lower(done);
+});
+
+afterEach(() => {
+  return Promise.all([
+    Friend.destroy(),
+    Friendship.destroy(),
+    Block.destroy(),
+    Subscription.destroy()
+  ])
 });
