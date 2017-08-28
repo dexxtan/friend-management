@@ -6,15 +6,20 @@
   "keywords": [],
   "dependencies": {
     "bluebird": "^3.5.0",
+    "chai": "^4.1.1",
     "include-all": "^1.0.0",
     "lodash": "^4.17.4",
+    "mocha": "^3.5.0",
     "rc": "1.0.1",
     "sails": "~0.12.13",
-    "sails-disk": "~0.10.9"
+    "sails-disk": "~0.10.9",
+    "sails-memory": "^0.10.7",
+    "supertest": "^3.0.0"
   },
   "scripts": {
     "debug": "node debug app.js",
-    "start": "node app.js"
+    "start": "node app.js",
+    "test": "node ./node_modules/mocha/bin/mocha test/bootstrap.test.js test/integration/**/*.test.js"
   },
   "main": "app.js",
   "repository": {
