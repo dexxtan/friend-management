@@ -214,26 +214,33 @@ module.exports = {
       // separate filtering blocked IDs from combining subscribedIDs and friendIDs
       const blockedIDs = blocks.map(block => block.blocker);
       const nonBlockedFriendIDs = targetFriendIDs.filter(friendID => blockedIDs.indexOf(friendID) === -1);
+      
+      let findCriteria;
+      if (mentionedEmails.length > 0) {
+        findCriteria = {
+          or: [{
+            id: nonBlockedFriendIDs
+          }, {
+            email: mentionedEmails
+          }]
+        };
+      } else {
+        findCriteria = { id: nonBlockedFriendIDs };
+      }
 
-      return Friend.find({
-        or: [{
-          id: nonBlockedFriendIDs
-        }, {
-          email: mentionedEmails
-        }]
-      });
+      return Friend.find(findCriteria);
     })
     .then(friends => {
       const emailList = friends.map(friend => friend.email);
 
       res.send(200, {
         success: true,
-        receipients: emailList
+        recipients: emailList
       });
     })
     .catch(e => {
-      if (e.message === blockExistsErrorMsg) {
-        res.send(400, { success: false, message: blockExistsErrorMsg }); 
+      if (e.message === senderDoesNotExistErrorMsg) {
+        res.send(400, { success: false, message: senderDoesNotExistErrorMsg }); 
       } else {
         res.serverError(e);
       }
