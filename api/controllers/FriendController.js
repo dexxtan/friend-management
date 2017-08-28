@@ -137,7 +137,7 @@ module.exports = {
       res.send(200, {
         success: true,
         friends: friendEmails,
-        count: friendsList.length
+        count: friendEmails.length
       });
     })
     .catch(e => {

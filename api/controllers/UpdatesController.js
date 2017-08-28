@@ -158,17 +158,17 @@ module.exports = {
 
       return Promise.all([
         Block.find({
-          target: senderEmail
+          target: sender.id
         }),
         Friendship.find({
           or: [{
-            friendor: senderEmail
+            friendor: sender.id
           }, {
-            friendee: senderEmail
+            friendee: sender.id
           }]
         }),
         Subscription.find({
-          target: senderEmail
+          target: sender.id
         })
       ])
     })
